@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import TransactionForm from "../components/TransactionForm";
 import {
@@ -11,6 +10,9 @@ function Transactions() {
     () => getTransactions()
   );
 
+  const [editingTransaction, setEditingTransaction] = useState(null);
+
+  // Add a new transaction
   const handleAddTransaction = (newTransaction) => {
     const updatedTransactions = [
       ...transactions,
@@ -21,12 +23,38 @@ function Transactions() {
     saveTransactions(updatedTransactions);
   };
 
+  // Start editing a transaction
+  const handleEdit = (transaction) => {
+    setEditingTransaction(transaction);
+  };
+
+  // Save the updated transaction
+  const handleUpdateTransaction = (updatedTransaction) => {
+    const updatedTransactions = transactions.map((transaction) =>
+      transaction.id === updatedTransaction.id
+        ? updatedTransaction
+        : transaction
+    );
+
+    setTransactions(updatedTransactions);
+    saveTransactions(updatedTransactions);
+    setEditingTransaction(null);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingTransaction(null);
+  };
+
   return (
     <div className="transactions-page">
       <h1>Transactions</h1>
 
       <TransactionForm
         onAddTransaction={handleAddTransaction}
+        editingTransaction={editingTransaction}
+        onUpdateTransaction={handleUpdateTransaction}
+        onCancelEdit={handleCancelEdit}
       />
 
       <h2>Transaction History</h2>
@@ -48,6 +76,10 @@ function Transactions() {
                 {transaction.type === "income" ? "+" : "-"}
                 ₹{transaction.amount.toLocaleString("en-IN")}
               </strong>
+
+              <button onClick={() => handleEdit(transaction)}>
+                Edit
+              </button>
             </div>
           ))}
         </div>

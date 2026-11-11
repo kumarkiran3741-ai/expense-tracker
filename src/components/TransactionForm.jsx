@@ -1,31 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function getToday() {
   const today = new Date();
   const offset = today.getTimezoneOffset();
+
   return new Date(today.getTime() - offset * 60000)
     .toISOString()
     .split("T")[0];
 }
 
-function TransactionForm({onAddTransaction }) {
+function TransactionForm({
+  onAddTransaction,
+  editingTransaction,
+  onUpdateTransaction,
+  onCancelEdit,
+}) {
   const [type, setType] = useState("expense");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Food");
   const [date, setDate] = useState(getToday());
 
+  useEffect(() => {
+    if (editingTransaction) {
+      setType(editingTransaction.type);
+      setDescription(editingTransaction.description);
+      setAmount(String(editingTransaction.amount));
+      setCategory(editingTransaction.category);
+      setDate(editingTransaction.date);
+    }
+  }, [editingTransaction]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!description.trim() || Number(amount) <= 0 || !date) 
-     {
+    if (!description.trim() || Number(amount) <= 0 || !date) {
       alert("Please enter valid transaction details.");
       return;
     }
 
-    const newTransaction = {
-      id: crypto.randomUUID(),
+    const transaction = {
+      id: editingTransaction
+        ? editingTransaction.id
+        : crypto.randomUUID(),
       type,
       description: description.trim(),
       amount: Number(amount),
@@ -33,18 +50,33 @@ function TransactionForm({onAddTransaction }) {
       date,
     };
 
-    onAddTransaction(newTransaction);
+    if (editingTransaction) {
+      onUpdateTransaction(transaction);
+    } else {
+      onAddTransaction(transaction);
+    }
 
-    // Clear the form
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setType("expense");
     setDescription("");
     setAmount("");
     setCategory("Food");
     setDate(getToday());
   };
 
+  const handleCancel = () => {
+    resetForm();
+    onCancelEdit();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="transaction-form">
-      <h2>Add Transaction</h2>
+      <h2>
+        {editingTransaction ? "Edit Transaction" : "Add Transaction"}
+      </h2>
 
       <label>Transaction Type</label>
       <select
@@ -97,7 +129,15 @@ function TransactionForm({onAddTransaction }) {
         required
       />
 
-      <button type="submit">Add Transaction</button>
+      <button type="submit">
+        {editingTransaction ? "Save Changes" : "Add Transaction"}
+      </button>
+
+      {editingTransaction && (
+        <button type="button" onClick={handleCancel}>
+          Cancel
+        </button>
+      )}
     </form>
   );
 }
